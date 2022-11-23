@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package grpc.gateway.examples.internal.proto.examplepb;
 
+import "examples/internal/proto/oneofenum/oneof_enum.proto";
 import "examples/internal/proto/pathenum/path_enum.proto";
 import "examples/internal/proto/sub/message.proto";
 import "examples/internal/proto/sub2/message.proto";
@@ -184,6 +185,16 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       }
     }
   }
+  tags: {
+    name: "echo rpc"
+    description: "Echo Rpc description"
+    extensions: {
+      key: "x-traitTag";
+      value {
+        bool_value: true;
+      }
+    }
+  }
   extensions: {
     key: "x-grpc-gateway-foo";
     value {
@@ -239,7 +250,8 @@ message ABitOfEverything {
       required: [
         "uuid",
         "int64_value",
-        "double_value"
+        "double_value",
+        "required_field_schema_json_name"
       ]
       extensions: {
         key: "x-a-bit-of-everything-foo";
@@ -382,6 +394,27 @@ message ABitOfEverything {
     min_length: 1
     description: "Only digits are allowed."
   }];
+
+  // Test openapiv2 generation of required fields with annotation and jsonschema to reproduce
+  string optional_string_field = 42;
+  string required_string_field_1 = 43 [(google.api.field_behavior) = REQUIRED];
+  string required_string_field_2 = 44 [(google.api.field_behavior) = REQUIRED];
+
+  // Test openapiv2 handling of required json_name fields
+  string required_field_behavior_json_name = 45 [
+    json_name = "required_field_behavior_json_name_custom",
+    (google.api.field_behavior) = REQUIRED
+  ];
+  string required_field_schema_json_name = 46 [json_name = "required_field_schema_json_name_custom"];
+
+  string trailing_only = 47; // Trailing only
+  string trailing_only_dot = 48; // Trailing only dot.
+  // Leading both
+  string trailing_both = 49; // Trailing both.
+  // Leading multiline
+  //
+  // This is an example of a multi-line comment.
+  string trailing_multiline = 50; // Trailing multiline.
 }
 
 // ABitOfEverythingRepeated is used to validate repeated path parameter functionality
@@ -542,6 +575,11 @@ service ABitOfEverythingService {
   rpc Custom(ABitOfEverything) returns (ABitOfEverything) {
     option (google.api.http) = {
       post: "/v1/example/a_bit_of_everything/{uuid}:custom"
+    };
+  }
+  rpc DoubleColon(ABitOfEverything) returns (ABitOfEverything) {
+    option (google.api.http) = {
+      post: "/v1/example/a_bit_of_everything/{uuid}:custom:custom"
     };
   }
   rpc Update(ABitOfEverything) returns (google.protobuf.Empty) {
@@ -717,6 +755,15 @@ service ABitOfEverythingService {
       body: "single_nested"
     };
   }
+  rpc OverwriteRequestContentType(Body) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v2/example/overwriterequestcontenttype"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      consumes: "application/x-bar-mime"
+    };
+  }
   rpc OverwriteResponseContentType(google.protobuf.Empty) returns (google.protobuf.StringValue) {
     option (google.api.http) = {
       get: "/v2/example/overwriteresponsecontenttype"
@@ -768,6 +815,20 @@ service ABitOfEverythingService {
       }
     };
   }
+
+  rpc PostOneofEnum(grpc.gateway.examples.internal.proto.oneofenum.OneofEnumMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/example/oneofenum"
+      body: "example_enum"
+    };
+  }
+
+  rpc PostRequiredMessageType(RequiredMessageTypeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/example/requiredmessagetype"
+      body: "*"
+    };
+  }
 }
 
 // camelCase and lowercase service names are valid but not recommended (use TitleCase instead)
@@ -780,4 +841,55 @@ service camelCaseServiceName {
 }
 service AnotherServiceWithNoBindings {
   rpc NoBindings(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+service SnakeEnumService {
+  rpc SnakeEnum(SnakeEnumRequest) returns (SnakeEnumResponse) {
+    option (google.api.http) = {
+      get: "/v1/example/snake/{who}/{what}/{where}"
+    };
+  }
+}
+
+// Ignoring lint warnings as this enum type exist to validate proper functionality
+// for projects that don't follow these lint rules.
+// buf:lint:ignore ENUM_PASCAL_CASE
+enum snake_case_enum {
+  // buf:lint:ignore ENUM_VALUE_UPPER_SNAKE_CASE
+  value_c = 0;
+  // buf:lint:ignore ENUM_VALUE_UPPER_SNAKE_CASE
+  value_d = 1;
+}
+
+// Ignoring lint warnings as this enum type exist to validate proper functionality
+// for projects that don't follow these lint rules.
+// buf:lint:ignore ENUM_PASCAL_CASE
+enum snake_case_0_enum {
+  // buf:lint:ignore ENUM_VALUE_UPPER_SNAKE_CASE
+  value_e = 0;
+  // buf:lint:ignore ENUM_VALUE_UPPER_SNAKE_CASE
+  value_f = 1;
+}
+
+message SnakeEnumRequest {
+  snake_case_enum what = 1;
+  snake_case_0_enum who = 2;
+  pathenum.snake_case_for_import where = 3;
+}
+
+message SnakeEnumResponse {}
+
+// Required message type -> OpenAPI
+// https://github.com/grpc-ecosystem/grpc-gateway/issues/2837
+message RequiredMessageTypeRequest {
+  string id = 1 [(google.api.field_behavior) = REQUIRED];
+  Foo foo = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message Foo {
+  Bar bar = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message Bar {
+  string id = 1 [(google.api.field_behavior) = REQUIRED];
 }

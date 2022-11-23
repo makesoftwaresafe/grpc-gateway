@@ -2,6 +2,7 @@ package descriptor
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/golang/glog"
@@ -47,9 +48,6 @@ type Registry struct {
 
 	// mergeFileName target OpenAPI file name after merge
 	mergeFileName string
-
-	// allowRepeatedFieldsInBody permits repeated field in body field path of `google.api.http` annotation option
-	allowRepeatedFieldsInBody bool
 
 	// includePackageInTags controls whether the package name defined in the `package` directive
 	// in the proto file can be prepended to the gRPC service name in the `Tags` field of every operation.
@@ -130,6 +128,14 @@ type Registry struct {
 
 	// annotationMap is used to check for duplicate HTTP annotations
 	annotationMap map[annotationIdentifier]struct{}
+
+	// disableServiceTags disables the generation of service tags.
+	// This is useful if you do not want to expose the names of your backend grpc services.
+	disableServiceTags bool
+
+	// disableDefaultResponses disables the generation of default responses.
+	// Useful if you have to support custom response codes that are not 200.
+	disableDefaultResponses bool
 }
 
 type repeatedFieldSeparator struct {
@@ -186,12 +192,18 @@ func (r *Registry) LoadFromPlugin(gen *protogen.Plugin) error {
 }
 
 func (r *Registry) load(gen *protogen.Plugin) error {
-	for filePath, f := range gen.FilesByPath {
-		r.loadFile(filePath, f)
+	filePaths := make([]string, 0, len(gen.FilesByPath))
+	for filePath := range gen.FilesByPath {
+		filePaths = append(filePaths, filePath)
+	}
+	sort.Strings(filePaths)
+
+	for _, filePath := range filePaths {
+		r.loadFile(filePath, gen.FilesByPath[filePath])
 	}
 
-	for filePath, f := range gen.FilesByPath {
-		if !f.Generate {
+	for _, filePath := range filePaths {
+		if !gen.FilesByPath[filePath].Generate {
 			continue
 		}
 		file := r.files[filePath]
@@ -449,18 +461,6 @@ func (r *Registry) IsAllowMerge() bool {
 // SetMergeFileName controls the target OpenAPI file name out of multiple protos
 func (r *Registry) SetMergeFileName(mergeFileName string) {
 	r.mergeFileName = mergeFileName
-}
-
-// SetAllowRepeatedFieldsInBody controls whether repeated field can be used
-// in `body` and `response_body` (`google.api.http` annotation option) field path or not
-func (r *Registry) SetAllowRepeatedFieldsInBody(allow bool) {
-	r.allowRepeatedFieldsInBody = allow
-}
-
-// IsAllowRepeatedFieldsInBody checks if repeated field can be used
-// in `body` and `response_body` (`google.api.http` annotation option) field path or not
-func (r *Registry) IsAllowRepeatedFieldsInBody() bool {
-	return r.allowRepeatedFieldsInBody
 }
 
 // SetIncludePackageInTags controls whether the package name defined in the `package` directive
@@ -751,4 +751,24 @@ func (r *Registry) CheckDuplicateAnnotation(httpMethod string, httpTemplate stri
 	}
 	r.annotationMap[a] = struct{}{}
 	return nil
+}
+
+// SetDisableServiceTags sets disableServiceTags
+func (r *Registry) SetDisableServiceTags(use bool) {
+	r.disableServiceTags = use
+}
+
+// GetDisableServiceTags returns disableServiceTags
+func (r *Registry) GetDisableServiceTags() bool {
+	return r.disableServiceTags
+}
+
+// SetDisableDefaultResponses setsdisableDefaultResponses
+func (r *Registry) SetDisableDefaultResponses(use bool) {
+	r.disableDefaultResponses = use
+}
+
+// GetDisableDefaultResponses returns disableDefaultResponses
+func (r *Registry) GetDisableDefaultResponses() bool {
+	return r.disableDefaultResponses
 }

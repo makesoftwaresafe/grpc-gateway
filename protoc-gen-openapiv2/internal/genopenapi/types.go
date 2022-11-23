@@ -31,6 +31,8 @@ type openapiTagObject struct {
 	Name         string                              `json:"name" yaml:"name"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	ExternalDocs *openapiExternalDocumentationObject `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+
+	extensions []extension `json:"-" yaml:"-"`
 }
 
 // http://swagger.io/specification/#contactObject
@@ -124,6 +126,7 @@ type openapiOperationObject struct {
 	Parameters  openapiParametersObject `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 	Tags        []string                `json:"tags,omitempty" yaml:"tags,omitempty"`
 	Deprecated  bool                    `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	Consumes    []string                `json:"consumes,omitempty" yaml:"consumes,omitempty"`
 	Produces    []string                `json:"produces,omitempty" yaml:"produces,omitempty"`
 
 	Security     *[]openapiSecurityRequirementObject `json:"security,omitempty" yaml:"security,omitempty"`
@@ -256,7 +259,7 @@ type keyVal struct {
 type openapiSchemaObjectProperties []keyVal
 
 func (p openapiSchemaObjectProperties) MarshalYAML() (interface{}, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]interface{}, len(p))
 
 	for _, v := range p {
 		m[v.Key] = v.Value

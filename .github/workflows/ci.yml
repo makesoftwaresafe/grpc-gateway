@@ -7,31 +7,31 @@ jobs:
   build:
     strategy:
       matrix:
-        go-version: [1.16.x, 1.17.x, 1.18.x]
+        go-version: [1.17.x, 1.18.x, 1.19.x]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
       - run: go build ./...
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           check-latest: true
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
       - run: go test ./...
   node_test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # tag=v3
         with:
           node-version: 10
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           check-latest: true
       - run: >
@@ -41,14 +41,14 @@ jobs:
           ./node_modules/.bin/gulp
   generate:
     container:
-      image: docker.pkg.github.com/grpc-ecosystem/grpc-gateway/build-env:1.17
+      image: docker.pkg.github.com/grpc-ecosystem/grpc-gateway/build-env:1.19
       options: "--user root"
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
       - run: make install
       - run: make clean
       - run: make generate
@@ -56,15 +56,15 @@ jobs:
       - run: git diff --exit-code
   bazel:
     container:
-      image: docker.pkg.github.com/grpc-ecosystem/grpc-gateway/build-env:1.17
+      image: docker.pkg.github.com/grpc-ecosystem/grpc-gateway/build-env:1.19
       options: "--user root"
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # tag=v3
         with:
           path: /home/vscode/.cache/_grpc_gateway_bazel
           key: v1-bazel-cache-${{ hashFiles('repositories.bzl') }}
@@ -93,17 +93,17 @@ jobs:
   gorelease:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
-      - run: go run golang.org/x/exp/cmd/gorelease@latest -base=v2.10.3
+      - run: go run golang.org/x/exp/cmd/gorelease@latest -base=v2.14.0
   proto_lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           check-latest: true
       - run: make install
@@ -116,8 +116,8 @@ jobs:
       pull-requests: read # for golangci/golangci-lint-action to fetch pull requests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: golangci/golangci-lint-action@v2
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - uses: golangci/golangci-lint-action@0ad9a0988b3973e851ab0a07adf248ec2e100376 # tag=v3
         with:
           version: v1.45
           args: --enable goimports
@@ -139,7 +139,7 @@ jobs:
           dry-run: false
           language: go
       - name: Upload Crash
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # tag=v3
         if: failure() && steps.build.outcome == 'success'
         with:
           name: artifacts

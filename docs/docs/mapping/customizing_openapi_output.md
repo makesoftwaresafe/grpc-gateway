@@ -578,4 +578,249 @@ definitions:
         type: string
 ```
 
+### Disable service tag generation
+
+By default service tags are generated for backend services, but it is possible to disable it using the `disable_service_tags` option. Allowed values are: `true`, `false`.
+
+For example, if you are using `buf`:
+```yaml
+version: v1
+plugins:
+  - name: openapiv2
+    out: .
+    opt:
+      - disable_service_tags=true
+```
+
+or with `protoc`
+
+```sh
+protoc --openapiv2_out=. --openapiv2_opt=disable_service_tags=true ./path/to/file.proto
+```
+
+Input example:
+```protobuf
+syntax = "proto3";
+
+package helloproto.v1;
+option go_package = "helloproto/v1;helloproto";
+
+import "google/api/annotations.proto";
+
+service EchoService {
+    rpc Hello(HelloReq) returns (HelloResp) {
+        option (google.api.http) = {
+            get: "/api/hello"
+        };
+    }
+}
+
+message HelloReq {
+    string name = 1;
+}
+
+message HelloResp {
+    string message = 1;
+}
+```
+
+Output (tags object are not generated):
+```yaml
+swagger: "2.0"
+info:
+  title: helloproto/v1/example.proto
+  version: version not set
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/hello:
+    get:
+      operationId: EchoService_Hello
+```
+
+### Disable default responses
+
+By default a 200 OK response is rendered for each service operation. But it is possible to disable this and explicitly define your service's responses, using the `disable_default_responses` option. Allowed values are: `true`, `false`.
+
+**Note**: This does not alter the behavior of the gateway itself and should be coupled with a `ForwardResponseWriter` when altering status codes, see [Controlling HTTP Response Codes](https://grpc-ecosystem.github.io/grpc-gateway/docs/mapping/customizing_your_gateway/#controlling-http-response-status-codes).
+
+For example, if you are using `buf`:
+
+```yaml
+version: v1
+plugins:
+  - name: openapiv2
+    out: .
+    opt:
+      - disable_default_responses=true
+```
+
+or with `protoc`
+
+```sh
+protoc --openapiv2_out=. --openapiv2_opt=disable_default_responses=true ./path/to/file.proto
+```
+
+Input example:
+
+```protobuf
+syntax = "proto3";
+
+package helloproto.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "helloproto/v1;helloproto";
+
+service EchoService {
+  rpc Hello(HelloReq) returns (HelloResp) {
+    option (google.api.http) = {get: "/api/hello"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: {
+        key: "201",
+        value: {
+          description: "Created";
+          schema: {
+            json_schema: {ref: ".helloproto.v1.HelloResp"}
+          }
+        }
+      };
+    };
+  }
+}
+
+message HelloReq {
+  string name = 1;
+}
+
+message HelloResp {
+  string message = 1;
+}
+```
+
+Output (default response not generated):
+
+```yaml
+swagger: "2.0"
+info:
+  title: helloproto/v1/hello.proto
+  version: version not set
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/hello:
+    get:
+      operationId: EchoService_Hello
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/v1HelloResp"
+      parameters:
+        - name: name
+          in: query
+          required: false
+          type: string
+definitions:
+  v1HelloResp:
+    type: object
+    properties:
+      message:
+        type: string
+```
+
+### Custom HTTP Header Request Parameters
+
+By default the parameters for each operation are generated from the protocol buffer definition however you can extend the parameters to include extra HTTP headers if required.
+
+**NOTE**: These annotations do not alter the behaviour of the gateway and must be coupled with custom header parsing behaviour in the application. Also be aware that adding header parameters can alter the forwards and backwards compatibility of the schema. You must also set a type for your header which can be one of `STRING`, `INTEGER`, `NUMBER` or `BOOLEAN`.
+
+```protobuf
+syntax = "proto3";
+
+package helloproto.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "helloproto/v1;helloproto";
+
+service EchoService {
+  rpc Hello(HelloReq) returns (HelloResp) {
+    option (google.api.http) = {get: "/api/hello"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      parameters: {
+        headers: {
+          name: "X-Foo";
+          description: "Foo Header";
+          type: STRING,
+          required: true;
+        };
+        headers: {
+          name: "X-Bar";
+          description: "Bar Header";
+          type: NUMBER,
+        };
+      };
+    };
+  }
+}
+
+message HelloReq {
+  string name = 1;
+}
+
+message HelloResp {
+  string message = 1;
+}
+```
+
+Output:
+
+```yaml
+swagger: "2.0"
+info:
+  title: helloproto/v1/hello.proto
+  version: version not set
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/hello:
+    get:
+      operationId: Hello
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/helloproto.v1.HelloResp"
+      parameters:
+        - name: name
+          in: query
+          required: false
+          type: string
+        - name: X-Foo
+          description: Foo Header
+          in: header
+          required: true
+          type: string
+        - name: X-Bar
+          description: Bar Header
+          in: header
+          required: false
+          type: number
+definitions:
+  helloproto.v1.HelloResp:
+    type: object
+    properties:
+      message:
+        type: string
+```
+
 {% endraw %}

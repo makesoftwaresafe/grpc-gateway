@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/glog"
 	examples "github.com/grpc-ecosystem/grpc-gateway/v2/examples/internal/proto/examplepb"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/examples/internal/proto/oneofenum"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/examples/internal/proto/pathenum"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/examples/internal/proto/sub"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/examples/internal/proto/sub2"
@@ -200,6 +201,19 @@ func (s *_ABitOfEverythingServer) Custom(ctx context.Context, msg *examples.ABit
 	return msg, nil
 }
 
+func (s *_ABitOfEverythingServer) DoubleColon(ctx context.Context, msg *examples.ABitOfEverything) (*examples.ABitOfEverything, error) {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	glog.Info(msg)
+	if _, ok := s.v[msg.Uuid]; ok {
+		s.v[msg.Uuid] = msg
+	} else {
+		return nil, status.Errorf(codes.NotFound, "not found")
+	}
+	return msg, nil
+}
+
 func (s *_ABitOfEverythingServer) Update(ctx context.Context, msg *examples.ABitOfEverything) (*emptypb.Empty, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -356,6 +370,10 @@ func (s *_ABitOfEverythingServer) CheckPostQueryParams(ctx context.Context, msg 
 	return msg, nil
 }
 
+func (s *_ABitOfEverythingServer) OverwriteRequestContentType(ctx context.Context, msg *examples.Body) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
 func (s *_ABitOfEverythingServer) OverwriteResponseContentType(ctx context.Context, msg *emptypb.Empty) (*wrapperspb.StringValue, error) {
 	return &wrapperspb.StringValue{}, nil
 }
@@ -392,4 +410,12 @@ func (s *_ABitOfEverythingServer) CustomOptionsRequest(ctx context.Context, msg 
 
 func (s *_ABitOfEverythingServer) TraceRequest(ctx context.Context, msg *examples.ABitOfEverything) (*examples.ABitOfEverything, error) {
 	return msg, nil
+}
+
+func (s *_ABitOfEverythingServer) PostOneofEnum(ctx context.Context, msg *oneofenum.OneofEnumMessage) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
+}
+
+func (s *_ABitOfEverythingServer) PostRequiredMessageType(ctx context.Context, req *examples.RequiredMessageTypeRequest) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
 }

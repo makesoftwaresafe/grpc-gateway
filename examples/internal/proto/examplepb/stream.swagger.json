@@ -68,7 +68,7 @@
         "parameters": [
           {
             "name": "body",
-            "description": " (streaming inputs)",
+            "description": "Intentionally complicated message type to cover many features of Protobuf. (streaming inputs)",
             "in": "body",
             "required": true,
             "schema": {
@@ -242,10 +242,7 @@
           "type": "number",
           "format": "float",
           "default": "0.2",
-          "description": "Float value field",
-          "required": [
-            "floatValue"
-          ]
+          "description": "Float value field"
         },
         "doubleValue": {
           "type": "number",
@@ -395,10 +392,7 @@
         },
         "requiredStringViaFieldBehaviorAnnotation": {
           "type": "string",
-          "title": "mark a field as required in Open API definition",
-          "required": [
-            "requiredStringViaFieldBehaviorAnnotation"
-          ]
+          "title": "mark a field as required in Open API definition"
         },
         "outputOnlyStringViaFieldBehaviorAnnotation": {
           "type": "string",
@@ -418,6 +412,41 @@
           },
           "description": "Only digits are allowed.",
           "title": "Test openapiv2 generation of repeated fields"
+        },
+        "optionalStringField": {
+          "type": "string",
+          "title": "Test openapiv2 generation of required fields with annotation and jsonschema to reproduce"
+        },
+        "requiredStringField1": {
+          "type": "string"
+        },
+        "requiredStringField2": {
+          "type": "string"
+        },
+        "required_field_behavior_json_name_custom": {
+          "type": "string",
+          "title": "Test openapiv2 handling of required json_name fields"
+        },
+        "required_field_schema_json_name_custom": {
+          "type": "string"
+        },
+        "trailingOnly": {
+          "type": "string",
+          "title": "Trailing only"
+        },
+        "trailingOnlyDot": {
+          "type": "string",
+          "description": "Trailing only dot."
+        },
+        "trailingBoth": {
+          "type": "string",
+          "description": "Trailing both.",
+          "title": "Leading both"
+        },
+        "trailingMultiline": {
+          "type": "string",
+          "description": "This is an example of a multi-line comment.\n\nTrailing multiline.",
+          "title": "Leading multiline"
         }
       },
       "description": "Intentionally complicated message type to cover many features of Protobuf.",
@@ -430,8 +459,12 @@
         "uuid",
         "int64Value",
         "doubleValue",
+        "required_field_schema_json_name_custom",
         "floatValue",
-        "requiredStringViaFieldBehaviorAnnotation"
+        "requiredStringViaFieldBehaviorAnnotation",
+        "requiredStringField1",
+        "requiredStringField2",
+        "required_field_behavior_json_name_custom"
       ],
       "x-a-bit-of-everything-foo": "bar"
     },
